@@ -22,15 +22,7 @@ const drawLoop = async () => {
   // console.log(randomPixelLocation);
   imageData.data[randomPixelLocation] = 255;
 
-  worker.postMessage(
-    {
-      data: imageData.data,
-      width: imageData.width,
-      height: imageData.height,
-      colorSpace: imageData.colorSpace,
-    } satisfies ImageData,
-    [imageData.data.buffer]
-  );
+  worker.postMessage({ ...imageData }, [imageData.data.buffer]);
   requestAnimationFrame(drawLoop);
 };
 

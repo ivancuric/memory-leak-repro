@@ -1,6 +1,6 @@
 //caught (in promise) DOMException: Failed to execute 'postMessage' on 'Worker': Data cannot be cloned, out of memory.
 
-onmessage = (e: any) => {
+onmessage = (e: MessageEvent<ImageData>) => {
   const locationOfDirtyPixel = e.data.data.indexOf(255);
   // console.log(locationOfDirtyPixel);
 
