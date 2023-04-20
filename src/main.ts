@@ -8,7 +8,7 @@ let randomPixelLocation: number;
 
 worker.addEventListener("message", (e: MessageEvent<number>) => {
   console.log(e.data === randomPixelLocation);
-  // requestAnimationFrame(drawLoop);
+  requestAnimationFrame(drawLoop);
 });
 
 const drawLoop = async () => {
@@ -23,7 +23,6 @@ const drawLoop = async () => {
   imageData.data[randomPixelLocation] = 255;
 
   worker.postMessage({ ...imageData }, [imageData.data.buffer]);
-  requestAnimationFrame(drawLoop);
 };
 
 requestAnimationFrame(drawLoop);
