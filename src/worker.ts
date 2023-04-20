@@ -2,7 +2,6 @@
 
 onmessage = (e: MessageEvent<ImageData>) => {
   const locationOfDirtyPixel = e.data.data.indexOf(255);
-  // console.log(locationOfDirtyPixel);
 
   postMessage(locationOfDirtyPixel);
 };
