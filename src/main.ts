@@ -4,20 +4,28 @@ function getRandomArbitrary(min: number, max: number) {
   return Math.trunc(Math.random() * (max - min) + min);
 }
 
+let inc = 0;
+let randomPixelLocation: number;
+
+worker.addEventListener("message", (e: MessageEvent<number>) => {
+  console.log(e.data === randomPixelLocation);
+  requestAnimationFrame(drawLoop);
+});
+
 const drawLoop = async () => {
   if (!worker) {
     return;
   }
 
+  inc++;
+
   const imageData = new ImageData(3840, 2160);
 
-  const randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
-  console.log(randomPixelLocation);
+  randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
+  // console.log(randomPixelLocation);
   imageData.data[randomPixelLocation] = 255;
 
   worker.postMessage(imageData, [imageData.data.buffer]);
-
-  requestAnimationFrame(drawLoop);
 };
 
 requestAnimationFrame(drawLoop);
