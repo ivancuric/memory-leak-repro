@@ -19,7 +19,7 @@ const drawLoop = async () => {
 
   inc++;
 
-  const imageData = new ImageData(3840, 2160);
+  const imageData = new ImageData(1920, 1080);
 
   randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
   // console.log(randomPixelLocation);
