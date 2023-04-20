@@ -4,7 +4,6 @@ function getRandomArbitrary(min: number, max: number) {
   return Math.trunc(Math.random() * (max - min) + min);
 }
 
-let inc = 0;
 let randomPixelLocation: number;
 
 worker.addEventListener("message", (e: MessageEvent<number>) => {
@@ -16,8 +15,6 @@ const drawLoop = async () => {
   if (!worker) {
     return;
   }
-
-  inc++;
 
   const imageData = new ImageData(1920, 1080);
 
