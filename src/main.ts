@@ -1,30 +1,21 @@
-const canvas = document.createElement("canvas");
-
-canvas.width = 1920;
-canvas.height = 1080;
-
-const ctx = canvas.getContext("2d", {
-  willReadFrequently: true,
-  alpha: false,
-});
-
-document.body.appendChild(canvas);
-
-const imageData = new ImageData(canvas.width, canvas.height);
-
-imageData.data.fill(255);
+const worker = new Worker(new URL("./worker.ts", import.meta.url));
 
 function getRandomArbitrary(min: number, max: number) {
   return Math.trunc(Math.random() * (max - min) + min);
 }
 
-ctx!.putImageData(imageData, 0, 0);
+const drawLoop = async () => {
+  if (!worker) {
+    return;
+  }
 
-const drawLoop = () => {
-  const randomPixel = getRandomArbitrary(0, imageData.data.length - 1);
-  imageData.data[randomPixel] = 0;
+  const imageData = new ImageData(3840, 2160);
 
-  ctx!.putImageData(imageData, 0, 0);
+  const randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
+  console.log(randomPixelLocation);
+  imageData.data[randomPixelLocation] = 255;
+
+  worker.postMessage(imageData, [imageData.data.buffer]);
 
   requestAnimationFrame(drawLoop);
 };
