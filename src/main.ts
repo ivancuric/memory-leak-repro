@@ -12,6 +12,11 @@ const fps = new FPS({
   FPS: 120,
 });
 
+function getRandomArbitrary(min: number, max: number) {
+  return Math.trunc(Math.random() * (max - min) + min);
+}
+
+// DOM nodes
 const waitCheckbox = document.querySelector("#wait") as HTMLInputElement;
 const fakeDataCheckbox = document.querySelector(
   "#fakeimgdata"
@@ -27,6 +32,7 @@ const resolutionField = document.querySelector(
   "#resolution"
 ) as HTMLFieldSetElement;
 
+// state
 let waitForWorkerResponse = waitCheckbox.checked;
 let useFakeImageData = fakeDataCheckbox.checked;
 let useTransferables = transferablesCheckbox.checked;
@@ -35,7 +41,9 @@ let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
 )!.value as ResolutionKey;
 
 let animationFrame: number;
+let randomPixelLocation: number;
 
+// event handling
 waitCheckbox.addEventListener("change", () => {
   waitForWorkerResponse = waitCheckbox.checked;
   cancelAnimationFrame(animationFrame);
@@ -60,14 +68,10 @@ resolutionField.addEventListener("change", (e) => {
   animationFrame = requestAnimationFrame(drawLoop);
 });
 
+// initialize the worker
 const worker = new Worker(new URL("./worker.ts", import.meta.url));
 
-function getRandomArbitrary(min: number, max: number) {
-  return Math.trunc(Math.random() * (max - min) + min);
-}
-
-let randomPixelLocation: number;
-
+// respond to worker
 worker.addEventListener("message", (e: MessageEvent<number>) => {
   const framesInSync = e.data === randomPixelLocation;
 
@@ -82,6 +86,7 @@ worker.addEventListener("message", (e: MessageEvent<number>) => {
   }
 });
 
+// the draw loop
 function drawLoop() {
   if (!worker) {
     return;
@@ -116,4 +121,5 @@ function drawLoop() {
   }
 }
 
+// start the engine
 requestAnimationFrame(drawLoop);
