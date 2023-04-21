@@ -1,5 +1,13 @@
 import { FPS } from "yy-fps";
 
+const resolutions = {
+  "1080p": [1920, 1080],
+  "4k": [3840, 2160],
+  "8k": [7680, 4320],
+} as const;
+
+type ResolutionKey = keyof typeof resolutions;
+
 const fps = new FPS({
   FPS: 120,
 });
@@ -15,10 +23,16 @@ const inSyncNode = document.querySelector("#insync") as HTMLDivElement;
 const bufferLengthNode = document.querySelector(
   "#bufferLength"
 ) as HTMLDivElement;
+const resolutionField = document.querySelector(
+  "#resolution"
+) as HTMLFieldSetElement;
 
 let waitForWorkerResponse = waitCheckbox.checked;
 let useFakeImageData = fakeDataCheckbox.checked;
 let useTransferables = transferablesCheckbox.checked;
+let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
+  "input:checked"
+)!.value as ResolutionKey;
 
 let animationFrame: number;
 
@@ -40,6 +54,12 @@ transferablesCheckbox.addEventListener("change", () => {
   animationFrame = requestAnimationFrame(drawLoop);
 });
 
+resolutionField.addEventListener("change", (e) => {
+  selectedResolutionKey = (e.target as HTMLInputElement).value as ResolutionKey;
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(drawLoop);
+});
+
 const worker = new Worker(new URL("./worker.ts", import.meta.url));
 
 function getRandomArbitrary(min: number, max: number) {
@@ -50,14 +70,12 @@ let randomPixelLocation: number;
 
 worker.addEventListener("message", (e: MessageEvent<number>) => {
   const framesInSync = e.data === randomPixelLocation;
-  console.log(framesInSync);
 
   if (framesInSync) {
     inSyncNode.textContent = "✅";
   } else {
     inSyncNode.textContent = "⛔️";
   }
-  // console.log(framesInSync);
 
   if (waitForWorkerResponse && framesInSync) {
     animationFrame = requestAnimationFrame(drawLoop);
@@ -71,7 +89,8 @@ function drawLoop() {
 
   fps.frame();
 
-  const imageData = new ImageData(3840, 2160);
+  const selectedResolution = resolutions[selectedResolutionKey];
+  const imageData = new ImageData(...(selectedResolution as [number, number]));
 
   randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
   imageData.data[randomPixelLocation] = 255;
