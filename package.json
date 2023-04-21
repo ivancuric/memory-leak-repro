@@ -11,5 +11,8 @@
   "devDependencies": {
     "typescript": "^5.0.4",
     "vite": "^4.3.0"
+  },
+  "dependencies": {
+    "yy-fps": "^2.0.1"
   }
 }

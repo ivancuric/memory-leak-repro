@@ -2,3 +2,9 @@ canvas {
   display: block;
   max-width: 100%;
 }
+
+#controls {
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+}
