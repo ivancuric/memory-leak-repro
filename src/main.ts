@@ -12,6 +12,9 @@ const transferablesCheckbox = document.querySelector(
   "#transferable"
 ) as HTMLInputElement;
 const inSyncNode = document.querySelector("#insync") as HTMLDivElement;
+const bufferLengthNode = document.querySelector(
+  "#bufferLength"
+) as HTMLDivElement;
 
 let waitForWorkerResponse = waitCheckbox.checked;
 let useFakeImageData = fakeDataCheckbox.checked;
@@ -84,6 +87,8 @@ function drawLoop() {
   const transferables = useTransferables ? [imageData.data.buffer] : [];
 
   worker.postMessage(payload, transferables);
+
+  bufferLengthNode.textContent = imageData.data.length.toString();
 
   if (!waitForWorkerResponse) {
     animationFrame = requestAnimationFrame(drawLoop);
