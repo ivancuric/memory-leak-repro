@@ -8,9 +8,14 @@ const waitCheckbox = document.querySelector("#wait") as HTMLInputElement;
 const fakeDataCheckbox = document.querySelector(
   "#fakeimgdata"
 ) as HTMLInputElement;
+const transferablesCheckbox = document.querySelector(
+  "#transferable"
+) as HTMLInputElement;
+const inSyncNode = document.querySelector("#insync") as HTMLDivElement;
 
 let waitForWorkerResponse = waitCheckbox.checked;
 let useFakeImageData = fakeDataCheckbox.checked;
+let useTransferables = transferablesCheckbox.checked;
 
 let animationFrame: number;
 
@@ -26,6 +31,12 @@ fakeDataCheckbox.addEventListener("change", () => {
   animationFrame = requestAnimationFrame(drawLoop);
 });
 
+transferablesCheckbox.addEventListener("change", () => {
+  useTransferables = transferablesCheckbox.checked;
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(drawLoop);
+});
+
 const worker = new Worker(new URL("./worker.ts", import.meta.url));
 
 function getRandomArbitrary(min: number, max: number) {
@@ -37,6 +48,13 @@ let randomPixelLocation: number;
 worker.addEventListener("message", (e: MessageEvent<number>) => {
   const framesInSync = e.data === randomPixelLocation;
   console.log(framesInSync);
+
+  if (framesInSync) {
+    inSyncNode.textContent = "✅";
+  } else {
+    inSyncNode.textContent = "⛔️";
+  }
+  // console.log(framesInSync);
 
   if (waitForWorkerResponse && framesInSync) {
     animationFrame = requestAnimationFrame(drawLoop);
@@ -63,8 +81,9 @@ function drawLoop() {
   } satisfies ImageData;
 
   const payload = useFakeImageData ? fakeImageData : imageData;
+  const transferables = useTransferables ? [imageData.data.buffer] : [];
 
-  worker.postMessage(payload, [imageData.data.buffer]);
+  worker.postMessage(payload, transferables);
 
   if (!waitForWorkerResponse) {
     animationFrame = requestAnimationFrame(drawLoop);
