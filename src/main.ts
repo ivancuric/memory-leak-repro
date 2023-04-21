@@ -95,6 +95,8 @@ function drawLoop() {
   randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
   imageData.data[randomPixelLocation] = 255;
 
+  // Using `{ ...imageData }` will only spread the `data` property
+
   const fakeImageData = {
     data: imageData.data,
     width: imageData.width,
