@@ -13,6 +13,7 @@
     "vite": "^4.3.0"
   },
   "dependencies": {
+    "comlink": "^4.4.1",
     "yy-fps": "^2.0.1"
   }
 }

@@ -1,5 +1,10 @@
-onmessage = (e: MessageEvent<ImageData>) => {
-  const locationOfDirtyPixel = e.data.data.indexOf(255);
+import { expose } from "comlink";
 
-  postMessage(locationOfDirtyPixel);
+const getDirtyPixelLocation = (imageData: ImageData) => {
+  const locationOfDirtyPixel = imageData.data.indexOf(255);
+  return locationOfDirtyPixel;
 };
+
+expose(getDirtyPixelLocation);
+
+export type GetDirtyPixelLocation = typeof getDirtyPixelLocation;

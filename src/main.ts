@@ -1,4 +1,6 @@
+import { wrap, transfer } from "comlink";
 import { FPS } from "yy-fps";
+import { GetDirtyPixelLocation } from "./worker";
 
 const resolutions = {
   "1080p": [1920, 1080],
@@ -17,7 +19,6 @@ function getRandomArbitrary(min: number, max: number) {
 }
 
 // DOM nodes
-const waitCheckbox = document.querySelector("#wait") as HTMLInputElement;
 const fakeDataCheckbox = document.querySelector(
   "#fakeimgdata"
 ) as HTMLInputElement;
@@ -33,7 +34,6 @@ const resolutionField = document.querySelector(
 ) as HTMLFieldSetElement;
 
 // state
-let waitForWorkerResponse = waitCheckbox.checked;
 let useFakeImageData = fakeDataCheckbox.checked;
 let useTransferables = transferablesCheckbox.checked;
 let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
@@ -44,50 +44,30 @@ let animationFrame: number;
 let randomPixelLocation: number;
 
 // event handling
-waitCheckbox.addEventListener("change", () => {
-  waitForWorkerResponse = waitCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
-});
-
 fakeDataCheckbox.addEventListener("change", () => {
   useFakeImageData = fakeDataCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
+  // cancelAnimationFrame(animationFrame);
 });
 
 transferablesCheckbox.addEventListener("change", () => {
   useTransferables = transferablesCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
+  // cancelAnimationFrame(animationFrame);
 });
 
 resolutionField.addEventListener("change", (e) => {
   selectedResolutionKey = (e.target as HTMLInputElement).value as ResolutionKey;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
+  // cancelAnimationFrame(animationFrame);
 });
 
 // initialize the worker
-const worker = new Worker(new URL("./worker.ts", import.meta.url));
-
-// respond to worker
-worker.addEventListener("message", (e: MessageEvent<number>) => {
-  const framesInSync = e.data === randomPixelLocation;
-
-  if (framesInSync) {
-    inSyncNode.textContent = "✅";
-  } else {
-    inSyncNode.textContent = "⛔️";
-  }
-
-  if (waitForWorkerResponse && framesInSync) {
-    animationFrame = requestAnimationFrame(drawLoop);
-  }
+const worker = new Worker(new URL("./worker.ts", import.meta.url), {
+  type: "module",
 });
 
+const getDirtyPixelLocation = wrap<GetDirtyPixelLocation>(worker);
+
 // the draw loop
-function drawLoop() {
+async function drawLoop() {
   if (!worker) {
     return;
   }
@@ -112,13 +92,21 @@ function drawLoop() {
   const payload = useFakeImageData ? fakeImageData : imageData;
   const transferables = useTransferables ? [imageData.data.buffer] : [];
 
-  worker.postMessage(payload, transferables);
+  const pixelLocation = await getDirtyPixelLocation(
+    transfer(payload, transferables)
+  );
+
+  const framesInSync = pixelLocation === randomPixelLocation;
+
+  if (framesInSync) {
+    inSyncNode.textContent = "✅";
+  } else {
+    inSyncNode.textContent = "⛔️";
+  }
 
   bufferLengthNode.textContent = imageData.data.length.toString();
 
-  if (!waitForWorkerResponse) {
-    animationFrame = requestAnimationFrame(drawLoop);
-  }
+  requestAnimationFrame(drawLoop);
 }
 
 // start the engine
