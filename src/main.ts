@@ -102,12 +102,12 @@ function drawLoop() {
 
   // Using `{ ...imageData }` will only spread the `data` property
 
-  const fakeImageData = {
+  const fakeImageData: ImageData = {
     data: imageData.data,
     width: imageData.width,
     height: imageData.height,
     colorSpace: imageData.colorSpace,
-  } satisfies ImageData;
+  };
 
   const payload = useFakeImageData ? fakeImageData : imageData;
   const transferables = useTransferables ? [imageData.data.buffer] : [];
