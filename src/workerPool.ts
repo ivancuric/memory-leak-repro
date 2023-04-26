@@ -31,15 +31,15 @@ type WorkerController = {
   callback?: MessageCallback;
 };
 
-const findAvailableWorker = () => {
-  let count = 0;
-  workers.forEach((worker) => {
-    if (worker.idle) {
-      count++;
-    }
-  });
-  console.log(count);
-};
+// const findAvailableWorker = () => {
+//   let count = 0;
+//   workers.forEach((worker) => {
+//     if (worker.idle) {
+//       count++;
+//     }
+//   });
+//   console.log(count);
+// };
 
 export const workerController: WorkerController = {
   postMessage: (message, transferables) => {
