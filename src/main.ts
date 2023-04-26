@@ -1,4 +1,5 @@
 import { FPS } from "yy-fps";
+import { workerController } from "./workerPool";
 
 const resolutions = {
   "1080p": [1920, 1080],
@@ -69,10 +70,7 @@ resolutionField.addEventListener("change", (e) => {
 });
 
 // initialize the worker
-const worker = new Worker(new URL("./worker.ts", import.meta.url));
-
-// respond to worker
-worker.addEventListener("message", (e: MessageEvent<number>) => {
+workerController.callback = (e) => {
   const framesInSync = e.data === randomPixelLocation;
 
   if (framesInSync) {
@@ -84,14 +82,10 @@ worker.addEventListener("message", (e: MessageEvent<number>) => {
   if (waitForWorkerResponse && framesInSync) {
     animationFrame = requestAnimationFrame(drawLoop);
   }
-});
+};
 
 // the draw loop
 function drawLoop() {
-  if (!worker) {
-    return;
-  }
-
   fps.frame();
 
   const selectedResolution = resolutions[selectedResolutionKey];
@@ -112,7 +106,7 @@ function drawLoop() {
   const payload = useFakeImageData ? fakeImageData : imageData;
   const transferables = useTransferables ? [imageData.data.buffer] : [];
 
-  worker.postMessage(payload, transferables);
+  workerController.postMessage(payload, transferables);
 
   bufferLengthNode.textContent = imageData.data.length.toString();
 
