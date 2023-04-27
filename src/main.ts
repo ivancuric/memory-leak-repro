@@ -1,5 +1,5 @@
 import { FPS } from "yy-fps";
-import { workerController } from "./workerPool";
+import { INITIAL_WORKERS, workerController } from "./workerPool";
 
 const resolutions = {
   "1080p": [1920, 1080],
@@ -10,7 +10,7 @@ const resolutions = {
 type ResolutionKey = keyof typeof resolutions;
 
 const fps = new FPS({
-  FPS: 120,
+  FPS: INITIAL_WORKERS * 100,
 });
 
 function getRandomArbitrary(min: number, max: number) {
@@ -26,6 +26,9 @@ const transferablesCheckbox = document.querySelector(
   "#transferable"
 ) as HTMLInputElement;
 const inSyncNode = document.querySelector("#insync") as HTMLDivElement;
+const workerThreadsNode = document.querySelector(
+  "#workerThreads"
+) as HTMLDivElement;
 const bufferLengthNode = document.querySelector(
   "#bufferLength"
 ) as HTMLDivElement;
@@ -41,32 +44,23 @@ let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
   "input:checked"
 )!.value as ResolutionKey;
 
-let animationFrame: number;
 let randomPixelLocation: number;
 
 // event handling
 waitCheckbox.addEventListener("change", () => {
   waitForWorkerResponse = waitCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 fakeDataCheckbox.addEventListener("change", () => {
   useFakeImageData = fakeDataCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 transferablesCheckbox.addEventListener("change", () => {
   useTransferables = transferablesCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 resolutionField.addEventListener("change", (e) => {
   selectedResolutionKey = (e.target as HTMLInputElement).value as ResolutionKey;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 // initialize the worker
@@ -78,14 +72,14 @@ workerController.callback = (e) => {
   } else {
     inSyncNode.textContent = "⛔️";
   }
-
-  if (waitForWorkerResponse && framesInSync) {
-    animationFrame = requestAnimationFrame(drawLoop);
-  }
 };
 
 // the draw loop
 function drawLoop() {
+  if (workerController.workersBusy() && waitForWorkerResponse) {
+    return;
+  }
+
   fps.frame();
 
   const selectedResolution = resolutions[selectedResolutionKey];
@@ -109,11 +103,19 @@ function drawLoop() {
   workerController.postMessage(payload, transferables);
 
   bufferLengthNode.textContent = imageData.data.length.toString();
-
-  if (!waitForWorkerResponse) {
-    animationFrame = requestAnimationFrame(drawLoop);
-  }
 }
 
 // start the engine
-requestAnimationFrame(drawLoop);
+setInterval(drawLoop, 0);
+
+const drawThreads = () => {
+  requestAnimationFrame(() => {
+    const threadStatus = workerController.getWorkerStatus();
+    workerThreadsNode.textContent = threadStatus
+      .map((thread) => (thread ? "🟢" : "🔴"))
+      .join("");
+    drawThreads();
+  });
+};
+
+requestAnimationFrame(drawThreads);

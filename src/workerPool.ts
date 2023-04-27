@@ -1,4 +1,4 @@
-const N_WORKERS = 4;
+export const INITIAL_WORKERS = 4;
 const workers: Array<WorkerConstruct> = [];
 let messageCount = 0;
 
@@ -7,7 +7,7 @@ type WorkerConstruct = {
   idle: boolean;
 };
 
-for (let i = 0; i < N_WORKERS; i++) {
+for (let i = 0; i < INITIAL_WORKERS; i++) {
   workers[i] = {
     instance: new Worker(new URL("./worker.ts", import.meta.url)),
     idle: true,
@@ -28,27 +28,31 @@ type MessageCallback = (e: MessageEvent<any>) => void;
 
 type WorkerController = {
   postMessage: (message: any, transferables?: Transferable[]) => void;
+  workersBusy: () => boolean;
+  getWorkerStatus: () => Array<boolean>;
   callback?: MessageCallback;
 };
 
-// const findAvailableWorker = () => {
-//   let count = 0;
-//   workers.forEach((worker) => {
-//     if (worker.idle) {
-//       count++;
-//     }
-//   });
-//   console.log(count);
-// };
-
 export const workerController: WorkerController = {
   postMessage: (message, transferables) => {
-    // findAvailableWorker();
-    let worker = workers[messageCount % N_WORKERS];
+    let worker = workers[messageCount % INITIAL_WORKERS];
+
+    // a little recursion, try with the next one
+    if (!worker.idle) {
+      messageCount++;
+      workerController.postMessage(message, transferables);
+      return;
+    }
 
     worker.idle = false;
     worker.instance.postMessage(message, transferables ? transferables : []);
 
     messageCount++;
+  },
+  workersBusy() {
+    return workers.every((worker) => !worker.idle);
+  },
+  getWorkerStatus() {
+    return workers.map((worker) => worker.idle);
   },
 };
