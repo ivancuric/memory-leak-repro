@@ -95,11 +95,10 @@ function drawLoop() {
 
   // Using `{ ...imageData }` will only spread the `data` property
 
-  const fakeImageData: ImageData = {
+  const fakeImageData: FakeImageData = {
     data: imageData.data,
-    width: imageData.width,
-    height: imageData.height,
-    colorSpace: imageData.colorSpace,
+    // width: imageData.width,
+    // height: imageData.height,
   };
 
   const payload = useFakeImageData ? fakeImageData : imageData;
@@ -113,3 +112,7 @@ function drawLoop() {
 
 // start the engine
 setInterval(drawLoop, 0);
+
+export type FakeImageData = {
+  data: Uint8ClampedArray;
+};
