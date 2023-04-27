@@ -45,6 +45,7 @@ let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
 )!.value as ResolutionKey;
 
 let randomPixelLocation: number;
+let framesInSync: boolean;
 
 // event handling
 waitCheckbox.addEventListener("change", () => {
@@ -65,13 +66,7 @@ resolutionField.addEventListener("change", (e) => {
 
 // initialize the worker
 workerController.callback = (e) => {
-  const framesInSync = e.data === randomPixelLocation;
-
-  if (framesInSync) {
-    inSyncNode.textContent = "✅";
-  } else {
-    inSyncNode.textContent = "⛔️";
-  }
+  framesInSync = e.data === randomPixelLocation;
 };
 
 // the draw loop
@@ -114,6 +109,11 @@ const drawThreads = () => {
     workerThreadsNode.textContent = threadStatus
       .map((thread) => (thread ? "🟢" : "🔴"))
       .join("");
+    if (framesInSync) {
+      inSyncNode.textContent = "✅";
+    } else {
+      inSyncNode.textContent = "⛔️";
+    }
     drawThreads();
   });
 };
