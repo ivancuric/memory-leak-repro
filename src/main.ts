@@ -34,7 +34,6 @@ const resolutionField = document.querySelector(
 
 // state
 let waitForWorkerResponse = waitCheckbox.checked;
-let useFakeImageData = fakeDataCheckbox.checked;
 let useTransferables = transferablesCheckbox.checked;
 let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
   "input:checked"
@@ -46,10 +45,6 @@ let workerBusy = false;
 // event handling
 waitCheckbox.addEventListener("change", () => {
   waitForWorkerResponse = waitCheckbox.checked;
-});
-
-fakeDataCheckbox.addEventListener("change", () => {
-  useFakeImageData = fakeDataCheckbox.checked;
 });
 
 transferablesCheckbox.addEventListener("change", () => {
@@ -88,31 +83,24 @@ function drawLoop() {
   fps.frame();
 
   const selectedResolution = resolutions[selectedResolutionKey];
-  const imageData = new ImageData(...(selectedResolution as [number, number]));
+  // const imageData = new ImageData(...(selectedResolution as [number, number]));
 
-  randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
-  imageData.data[randomPixelLocation] = 255;
+  const arrayBuffer = new ArrayBuffer(
+    selectedResolution[0] * selectedResolution[1] * 4
+  );
 
-  // Using `{ ...imageData }` will only spread the `data` property
+  const dataArray = new Uint8ClampedArray(arrayBuffer);
 
-  const fakeImageData: FakeImageData = {
-    data: imageData.data,
-    // width: imageData.width,
-    // height: imageData.height,
-  };
+  randomPixelLocation = getRandomArbitrary(0, dataArray.length - 1);
+  dataArray[randomPixelLocation] = 255;
 
-  const payload = useFakeImageData ? fakeImageData : imageData;
-  const transferables = useTransferables ? [imageData.data.buffer] : [];
+  const transferables = useTransferables ? [dataArray.buffer] : [];
 
   workerBusy = true;
-  worker.postMessage(payload, transferables);
+  worker.postMessage(dataArray, transferables);
 
-  bufferLengthNode.textContent = imageData.data.length.toString();
+  bufferLengthNode.textContent = dataArray.length.toString();
 }
 
 // start the engine
 setInterval(drawLoop, 0);
-
-export type FakeImageData = {
-  data: Uint8ClampedArray;
-};
