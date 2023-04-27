@@ -9,7 +9,7 @@ const resolutions = {
 type ResolutionKey = keyof typeof resolutions;
 
 const fps = new FPS({
-  FPS: 120,
+  FPS: 500,
 });
 
 function getRandomArbitrary(min: number, max: number) {
@@ -40,32 +40,24 @@ let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
   "input:checked"
 )!.value as ResolutionKey;
 
-let animationFrame: number;
 let randomPixelLocation: number;
+let workerBusy = false;
 
 // event handling
 waitCheckbox.addEventListener("change", () => {
   waitForWorkerResponse = waitCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 fakeDataCheckbox.addEventListener("change", () => {
   useFakeImageData = fakeDataCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 transferablesCheckbox.addEventListener("change", () => {
   useTransferables = transferablesCheckbox.checked;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 resolutionField.addEventListener("change", (e) => {
   selectedResolutionKey = (e.target as HTMLInputElement).value as ResolutionKey;
-  cancelAnimationFrame(animationFrame);
-  animationFrame = requestAnimationFrame(drawLoop);
 });
 
 // initialize the worker
@@ -73,6 +65,7 @@ const worker = new Worker(new URL("./worker.ts", import.meta.url));
 
 // respond to worker
 worker.addEventListener("message", (e: MessageEvent<number>) => {
+  workerBusy = false;
   const framesInSync = e.data === randomPixelLocation;
 
   if (framesInSync) {
@@ -80,15 +73,15 @@ worker.addEventListener("message", (e: MessageEvent<number>) => {
   } else {
     inSyncNode.textContent = "⛔️";
   }
-
-  if (waitForWorkerResponse && framesInSync) {
-    animationFrame = requestAnimationFrame(drawLoop);
-  }
 });
 
 // the draw loop
 function drawLoop() {
   if (!worker) {
+    return;
+  }
+
+  if (workerBusy && waitForWorkerResponse) {
     return;
   }
 
@@ -112,14 +105,11 @@ function drawLoop() {
   const payload = useFakeImageData ? fakeImageData : imageData;
   const transferables = useTransferables ? [imageData.data.buffer] : [];
 
+  workerBusy = true;
   worker.postMessage(payload, transferables);
 
   bufferLengthNode.textContent = imageData.data.length.toString();
-
-  if (!waitForWorkerResponse) {
-    animationFrame = requestAnimationFrame(drawLoop);
-  }
 }
 
 // start the engine
-requestAnimationFrame(drawLoop);
+setInterval(drawLoop, 0);
