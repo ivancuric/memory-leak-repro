@@ -8,6 +8,11 @@ const resolutions = {
 
 type ResolutionKey = keyof typeof resolutions;
 
+export type Payload = {
+  imageData: ImageData;
+  useBlackHole: boolean;
+};
+
 const fps = new FPS({
   FPS: 120,
 });
@@ -16,8 +21,20 @@ function getRandomArbitrary(min: number, max: number) {
   return Math.trunc(Math.random() * (max - min) + min);
 }
 
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d", {
+  willReadFrequently: true,
+  // no alpha breaks it?!
+  // alpha: false,
+  desynchronized: true,
+})!;
+
 // DOM nodes
 const waitCheckbox = document.querySelector("#wait") as HTMLInputElement;
+const canvasCheckbox = document.querySelector("#canvas") as HTMLInputElement;
+const blackHoleCheckbox = document.querySelector(
+  "#blackhole"
+) as HTMLInputElement;
 const fakeDataCheckbox = document.querySelector(
   "#fakeimgdata"
 ) as HTMLInputElement;
@@ -36,6 +53,8 @@ const resolutionField = document.querySelector(
 let waitForWorkerResponse = waitCheckbox.checked;
 let useFakeImageData = fakeDataCheckbox.checked;
 let useTransferables = transferablesCheckbox.checked;
+let useCanvas = canvasCheckbox.checked;
+let useBlackHole = blackHoleCheckbox.checked;
 let selectedResolutionKey = resolutionField.querySelector<HTMLInputElement>(
   "input:checked"
 )!.value as ResolutionKey;
@@ -58,6 +77,18 @@ fakeDataCheckbox.addEventListener("change", () => {
 
 transferablesCheckbox.addEventListener("change", () => {
   useTransferables = transferablesCheckbox.checked;
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(drawLoop);
+});
+
+blackHoleCheckbox.addEventListener("change", () => {
+  useBlackHole = blackHoleCheckbox.checked;
+  cancelAnimationFrame(animationFrame);
+  animationFrame = requestAnimationFrame(drawLoop);
+});
+
+canvasCheckbox.addEventListener("change", () => {
+  useCanvas = canvasCheckbox.checked;
   cancelAnimationFrame(animationFrame);
   animationFrame = requestAnimationFrame(drawLoop);
 });
@@ -95,7 +126,18 @@ function drawLoop() {
   fps.frame();
 
   const selectedResolution = resolutions[selectedResolutionKey];
-  const imageData = new ImageData(...(selectedResolution as [number, number]));
+  let imageData: ImageData;
+
+  // paint and read from canvas
+  if (canvasCheckbox.checked) {
+    canvas.width = selectedResolution[0];
+    canvas.height = selectedResolution[1];
+    ctx.drawImage(canvas, 0, 0);
+    imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } else {
+    // or just create a new `ImageData` object
+    imageData = new ImageData(...(selectedResolution as [number, number]));
+  }
 
   randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
   imageData.data[randomPixelLocation] = 255;
@@ -109,7 +151,11 @@ function drawLoop() {
     colorSpace: imageData.colorSpace,
   };
 
-  const payload = useFakeImageData ? fakeImageData : imageData;
+  const data = useFakeImageData ? fakeImageData : imageData;
+  const payload: Payload = {
+    imageData: data,
+    useBlackHole,
+  };
   const transferables = useTransferables ? [imageData.data.buffer] : [];
 
   worker.postMessage(payload, transferables);
