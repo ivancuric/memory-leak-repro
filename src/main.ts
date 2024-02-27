@@ -24,9 +24,7 @@ function getRandomArbitrary(min: number, max: number) {
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d", {
   willReadFrequently: true,
-  // no alpha breaks it?!
-  // alpha: false,
-  desynchronized: true,
+  // can't use `alpha: false` for this test as the alpha channels will be set to 255
 })!;
 
 // DOM nodes
@@ -141,7 +139,6 @@ function drawLoop() {
 
   randomPixelLocation = getRandomArbitrary(0, imageData.data.length - 1);
   imageData.data[randomPixelLocation] = 255;
-
   // Using `{ ...imageData }` will only spread the `data` property
 
   const fakeImageData: ImageData = {
