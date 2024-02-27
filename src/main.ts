@@ -129,7 +129,7 @@ function drawLoop() {
   let imageData: ImageData;
 
   // paint and read from canvas
-  if (canvasCheckbox.checked) {
+  if (useCanvas) {
     canvas.width = selectedResolution[0];
     canvas.height = selectedResolution[1];
     ctx.drawImage(canvas, 0, 0);
