@@ -21,6 +21,11 @@ function getRandomArbitrary(min: number, max: number) {
   return Math.trunc(Math.random() * (max - min) + min);
 }
 
+function isSafari(): boolean {
+  const userAgent = self.navigator.userAgent.toLowerCase();
+  return userAgent.includes("safari") && !userAgent.includes("chrome");
+}
+
 const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d", {
   willReadFrequently: true,
@@ -46,6 +51,10 @@ const bufferLengthNode = document.querySelector(
 const resolutionField = document.querySelector(
   "#resolution"
 ) as HTMLFieldSetElement;
+
+if (isSafari()) {
+  blackHoleCheckbox.checked = false;
+}
 
 // state
 let waitForWorkerResponse = waitCheckbox.checked;
